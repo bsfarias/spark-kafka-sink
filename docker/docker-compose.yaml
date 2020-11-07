@@ -1,0 +1,35 @@
+version: '3'
+services:
+  zookeeper_confluent:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper_confluent
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka_confluent:
+    image: confluentinc/cp-enterprise-kafka:latest
+    container_name: kafka_confluent
+    depends_on:
+      - zookeeper_confluent
+    ports:
+      - 9094:9094
+    volumes:  
+      - ../kafka/data:/home/appuser/
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper_confluent:2181
+      KAFKA_LISTENERS: INTERNAL://kafka_confluent:9092,OUTSIDE://kafka_confluent:9094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka_confluent:9092,OUTSIDE://kafka_confluent:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+
+  spark-streaming:
+    image: jupyter/all-spark-notebook
+    container_name: spark-streaming
+    ports:
+      - "8888:8888"
+      - "4040-4080:4040-4080"
+    volumes:
+      - ./jupyter/notebooks:/home/jovyan/work/notebooks/
+      - ../spark:/home/jovyan/scripts/
